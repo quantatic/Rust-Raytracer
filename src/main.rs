@@ -4,13 +4,23 @@ mod shapes;
 use crate::geometry::{Ray, Vec3};
 use crate::shapes::{Hitable, Sphere};
 
-fn render((width, height): (u32, u32), scale: f64, objects: &[Sphere]) {
-    let (width, height) = (width as i32, height as i32);
+use image::ColorType;
+use image::png::PNGEncoder;
+use std::fs::File;
 
-    for y in (-height / 2)..(height / 2) {
-        let y = y as f64 / height as f64 * scale;
-        for x in (-width / 2)..(width / 2) {
-            let x = x as f64 / width as f64 * scale;
+fn pixel_to_location((pixel_width, pixel_height): (usize, usize), (pixel_x, pixel_y): (usize, usize)) -> (f64, f64) {
+	let loc_x = ((pixel_x as f64) - ((pixel_width as f64) / 2.0)) / (pixel_width as f64) * 2.0;
+	let loc_y = ((pixel_y as f64) - ((pixel_height as f64) / 2.0)) / (pixel_height as f64) * 2.0;
+
+	(loc_x, loc_y)
+}
+
+fn render((width, height): (usize, usize), objects: &[Sphere]) -> Vec<u8> {
+	let mut result = Vec::new();
+
+	for i in 0..height {
+		for j in 0..width {
+			let (x, y) = pixel_to_location((width, height), (i, j));
 
             let ray = Ray {
                 pos: Vec3 {
@@ -33,15 +43,19 @@ fn render((width, height): (u32, u32), scale: f64, objects: &[Sphere]) {
                 }
             }
 
-            if hit {
-                print!("##");
-            } else {
-                print!("  ");
-            }
+			result.push(if hit {255} else {0});
         }
-
-        println!();
     }
+
+	result
+}
+
+fn write_image(filename: &str, pixels: &[u8], (width, height): (usize, usize)) -> Result<(), std::io::Error> {
+	let output = File::create(filename)?;
+
+	let encoder = PNGEncoder::new(output);
+
+	encoder.encode(pixels, width as u32, height as u32, ColorType::Gray(8))
 }
 
 fn main() {
@@ -60,11 +74,16 @@ fn main() {
             pos: Vec3 {
                 x: 1.0,
                 y: 1.0,
-                z: -3.0
+                z: -2.0
             },
-            radius: 2.0
+            radius: 1.0
         }
     ];
 
-    render((50, 50), 3.0, &objects);
+	let dims = (500, 500);
+
+    let pixels = render(dims, &objects);
+	write_image("output.png", &pixels, dims)
+		.expect("Failed to write to file");
+
 }
