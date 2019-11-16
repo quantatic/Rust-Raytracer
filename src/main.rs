@@ -1,8 +1,10 @@
+mod color;
 mod hit;
 mod ray;
 mod shapes;
 mod vector;
 
+use crate::color::Color;
 use crate::hit::Hit;
 use crate::vector::Vec3;
 use crate::ray::Ray;
@@ -39,14 +41,12 @@ fn render(rendered_dims: (u32, u32), objects: &[Box<dyn Hitable>]) -> ImageBuffe
             }
         }
 
-        *pixel = image::Rgb(
-            match closest_hit {
-                Some(Hit{normal, ..}) => {
-                    [((normal.x / 2.0 + 0.5) * 255.0) as u8, ((normal.y / 2.0 + 0.5) * 255.0) as u8, ((normal.z / 2.0 + 0.5) * 255.0) as u8]
-                },
-                None => [127; 3],
-            }
-        );
+        *pixel = match closest_hit {
+            Some(Hit{hit, ..}) => {
+                hit.color().into()
+            },
+            None => image::Rgb([127; 3])
+        };
     }
 
     result
@@ -66,19 +66,22 @@ fn main() {
     let objects: Vec<Box<dyn Hitable>> = vec![
         Box::new(Sphere {
             pos: Vec3::new(0.0, 0.0, -7.0),
-            radius: 1.0
+            radius: 1.0,
+            color: Color::new(255, 0, 0),
         }),
         Box::new(Sphere {
             pos: Vec3::new(2.0, 0.0, -7.0),
-            radius: 2.5
+            radius: 2.5,
+            color: Color::new(0, 255, 0),
         }),
         Box::new(Sphere {
             pos: Vec3::new(1.0, 1.0, -5.0),
-            radius: 1.0
+            radius: 1.0,
+            color: Color::new(0, 0, 255),
         }),
     ];
 
-    let dims = (5000, 5000);
+    let dims = (1_000, 1_000);
 
     let pixels = render(dims, &objects);
     write_image("output.png", &pixels, dims)

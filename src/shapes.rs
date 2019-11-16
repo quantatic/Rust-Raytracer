@@ -1,14 +1,17 @@
+use crate::color::Color;
 use crate::vector::Vec3;
 use crate::ray::Ray;
 use crate::hit::Hit;
 
 pub trait Hitable {
     fn hit(&self, ray: &Ray) -> Option<Hit>;
+    fn color(&self) -> Color;
 }
 
 pub struct Sphere {
     pub pos: Vec3,
-    pub radius: f64
+    pub radius: f64,
+    pub color: Color,
 }
 
 impl Hitable for Sphere {
@@ -47,5 +50,9 @@ impl Hitable for Sphere {
                 normal,
             }
         )
+    }
+
+    fn color(&self) -> Color {
+        self.color
     }
 }
