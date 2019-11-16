@@ -1,89 +1,86 @@
-mod geometry;
+mod hit;
+mod ray;
 mod shapes;
+mod vector;
 
-use crate::geometry::{Ray, Vec3};
+use crate::hit::Hit;
+use crate::vector::Vec3;
+use crate::ray::Ray;
 use crate::shapes::{Hitable, Sphere};
-
-use image::ColorType;
+use image::{ColorType, ImageBuffer, Rgb};
 use image::png::PNGEncoder;
 use std::fs::File;
 
-fn pixel_to_location((pixel_width, pixel_height): (usize, usize), (pixel_x, pixel_y): (usize, usize)) -> (f64, f64) {
-	let loc_x = ((pixel_x as f64) - ((pixel_width as f64) / 2.0)) / (pixel_width as f64) * 2.0;
-	let loc_y = ((pixel_y as f64) - ((pixel_height as f64) / 2.0)) / (pixel_height as f64) * 2.0;
+// Renders a square 2x2 view plane, 1 unit away from the camera. The camera is located at (0, 0).
+fn render(rendered_dims: (u32, u32), objects: &[Box<dyn Hitable>]) -> ImageBuffer<Rgb<u8>, Vec<u8>> {
+    let (rendered_width, rendered_height) = rendered_dims;
 
-	(loc_x, loc_y)
-}
+    let mut result: ImageBuffer<Rgb<u8>, Vec<u8>> = ImageBuffer::new(rendered_width, rendered_height);
 
-fn render((width, height): (usize, usize), objects: &[Sphere]) -> Vec<u8> {
-	let mut result = Vec::new();
+    for (pixel_x, pixel_y, pixel) in result.enumerate_pixels_mut() {
+        let x = ((pixel_x as f64) - ((rendered_width as f64) / 2.0) + 0.5) / (rendered_width as f64);
+        let y = ((pixel_y as f64) - ((rendered_height as f64) / 2.0) + 0.5) / (rendered_height as f64);
 
-	for i in 0..height {
-		for j in 0..width {
-			let (x, y) = pixel_to_location((width, height), (i, j));
+        let ray = Ray {
+            pos: Vec3::new(0.0, 0.0, 0.0),
+            dir: Vec3::new(x, y, -1.0),
+        };
 
-            let ray = Ray {
-                pos: Vec3 {
-                    x: 0.0,
-                    y: 0.0,
-                    z: 0.0
-                },
-                dir: Vec3 {
-                    x,
-                    y,
-                    z: -1.0
-                }
-            };
-
-            let mut hit = false;
-            for obj in objects.iter() {
-                if obj.hit(&ray) {
-                    hit = true;
-                    break;
+        let mut closest_hit: Option<Hit> = None;
+        for obj in objects.iter() {
+            if let Some(new_hit_record) = obj.hit(&ray) {
+                if let Some(old_hit_record) = &closest_hit {
+                    if old_hit_record.dist > new_hit_record.dist {
+                        closest_hit = Some(new_hit_record);
+                    }
+                } else {
+                    closest_hit = Some(new_hit_record);
                 }
             }
-
-			result.push(if hit {255} else {0});
         }
+
+        *pixel = image::Rgb(
+            match closest_hit {
+                Some(Hit{normal, ..}) => {
+                    [((normal.x / 2.0 + 0.5) * 255.0) as u8, ((normal.y / 2.0 + 0.5) * 255.0) as u8, ((normal.z / 2.0 + 0.5) * 255.0) as u8]
+                },
+                None => [127; 3],
+            }
+        );
     }
 
-	result
+    result
 }
 
-fn write_image(filename: &str, pixels: &[u8], (width, height): (usize, usize)) -> Result<(), std::io::Error> {
-	let output = File::create(filename)?;
+fn write_image(filename: &str, pixels: &[u8], (width, height): (u32, u32)) -> Result<(), std::io::Error> {
+    let output = File::create(filename)?;
 
-	let encoder = PNGEncoder::new(output);
+    let encoder = PNGEncoder::new(output);
 
-	encoder.encode(pixels, width as u32, height as u32, ColorType::Gray(8))
+    encoder.encode(pixels, width, height, ColorType::RGB(8))
 }
 
 fn main() {
     println!("Hello, world!");
 
-    let objects = vec![
-        Sphere {
-            pos: Vec3 {
-                x: -1.0,
-                y: -1.0,
-                z: -1.5
-            },
+    let objects: Vec<Box<dyn Hitable>> = vec![
+        Box::new(Sphere {
+            pos: Vec3::new(0.0, 0.0, -7.0),
             radius: 1.0
-        },
-        Sphere {
-            pos: Vec3 {
-                x: 1.0,
-                y: 1.0,
-                z: -2.0
-            },
+        }),
+        Box::new(Sphere {
+            pos: Vec3::new(2.0, 0.0, -7.0),
+            radius: 2.5
+        }),
+        Box::new(Sphere {
+            pos: Vec3::new(1.0, 1.0, -5.0),
             radius: 1.0
-        }
+        }),
     ];
 
-	let dims = (500, 500);
+    let dims = (5000, 5000);
 
     let pixels = render(dims, &objects);
-	write_image("output.png", &pixels, dims)
-		.expect("Failed to write to file");
-
+    write_image("output.png", &pixels, dims)
+        .expect("Failed to write to image");
 }
