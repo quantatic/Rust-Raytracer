@@ -1,3 +1,4 @@
+mod camera;
 mod color;
 mod hit;
 mod ray;
@@ -5,10 +6,9 @@ mod shapes;
 mod vector;
 
 use crate::color::Color;
-use crate::hit::Hit;
 use crate::vector::Vec3;
 use crate::ray::Ray;
-use crate::shapes::{Hitable, Sphere};
+use crate::shapes::{Hitable, Sphere, Plane};
 use image::{ColorType, ImageBuffer, Rgb};
 use image::png::PNGEncoder;
 use std::fs::File;
@@ -21,29 +21,17 @@ fn render(rendered_dims: (u32, u32), objects: &[Box<dyn Hitable>]) -> ImageBuffe
 
     for (pixel_x, pixel_y, pixel) in result.enumerate_pixels_mut() {
         let x = ((pixel_x as f64) - ((rendered_width as f64) / 2.0) + 0.5) / (rendered_width as f64);
-        let y = ((pixel_y as f64) - ((rendered_height as f64) / 2.0) + 0.5) / (rendered_height as f64);
+        let y = (((rendered_height as f64) / 2.0) - (pixel_y as f64) + 0.5) / (rendered_height as f64);
 
         let ray = Ray {
             pos: Vec3::new(0.0, 0.0, 0.0),
-            dir: Vec3::new(x, y, -1.0),
+            dir: Vec3::new(x, y, -1.0).unit(),
         };
 
-        let mut closest_hit: Option<Hit> = None;
-        for obj in objects.iter() {
-            if let Some(new_hit_record) = obj.hit(&ray) {
-                if let Some(old_hit_record) = &closest_hit {
-                    if old_hit_record.dist > new_hit_record.dist {
-                        closest_hit = Some(new_hit_record);
-                    }
-                } else {
-                    closest_hit = Some(new_hit_record);
-                }
-            }
-        }
 
-        *pixel = match closest_hit {
-            Some(Hit{hit, ..}) => {
-                hit.color().into()
+        *pixel = match camera::cast_ray(objects, ray, 3) {
+			Some(color) => {
+				color.into()
             },
             None => image::Rgb([127; 3])
         };
@@ -65,23 +53,38 @@ fn main() {
 
     let objects: Vec<Box<dyn Hitable>> = vec![
         Box::new(Sphere {
-            pos: Vec3::new(0.0, 0.0, -7.0),
+            pos: Vec3::new(0.0, -1.4, -10.0),
             radius: 1.0,
             color: Color::new(255, 0, 0),
         }),
         Box::new(Sphere {
-            pos: Vec3::new(2.0, 0.0, -7.0),
-            radius: 2.5,
-            color: Color::new(0, 255, 0),
+            pos: Vec3::new(3.0, 0.0, -12.0),
+            radius: 1.0,
+            color: Color::new(255, 255, 0),
         }),
         Box::new(Sphere {
-            pos: Vec3::new(1.0, 1.0, -5.0),
-            radius: 1.0,
-            color: Color::new(0, 0, 255),
+            pos: Vec3::new(3.0, 3.0, -12.0),
+            radius: 2.0,
+            color: Color::new(127, 255, 127),
         }),
+        Box::new(Sphere {
+            pos: Vec3::new(-3.0, 0.0, -12.0),
+            radius: 1.0,
+            color: Color::new(255, 0, 255),
+        }),
+		Box::new(Plane {
+			point: Vec3::new(0.0, -2.0, 0.0),
+			normal: Vec3::new(0.0, 1.0, 0.0),
+			color: Color::new(0, 0, 255),
+		}),
+		Box::new(Plane {
+			point: Vec3::new(0.0, 0.0, -20.0),
+			normal: Vec3::new(0.0, 0.0, 1.0),
+			color: Color::new(127, 127, 127),
+		}),
     ];
 
-    let dims = (1_000, 1_000);
+    let dims = (5_000, 5_000);
 
     let pixels = render(dims, &objects);
     write_image("output.png", &pixels, dims)

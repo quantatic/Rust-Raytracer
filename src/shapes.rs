@@ -4,7 +4,7 @@ use crate::ray::Ray;
 use crate::hit::Hit;
 
 pub trait Hitable {
-    fn hit(&self, ray: &Ray) -> Option<Hit>;
+    fn hit(&self, ray: Ray) -> Option<Hit>;
     fn color(&self) -> Color;
 }
 
@@ -15,7 +15,7 @@ pub struct Sphere {
 }
 
 impl Hitable for Sphere {
-    fn hit(&self, ray: &Ray) -> Option<Hit> {
+    fn hit(&self, ray: Ray) -> Option<Hit> {
         let eqn_c = self.pos;
         let eqn_r = self.radius;
         let eqn_l = ray.dir;
@@ -36,18 +36,27 @@ impl Hitable for Sphere {
         let solution_one = (-b + disc.sqrt()) / (2.0 * a);
         let solution_two = (-b - disc.sqrt()) / (2.0 * a);
 
+		if solution_one <= 0.0 && solution_two <= 0.0 {
+			return None;
+		}
+
         let dist = if solution_one > 0.0 && solution_one < solution_two {
             solution_one
         } else {
             solution_two
         };
 
-        let normal = (ray.eval(dist) - self.pos).unit();
+		let hit_point = ray.eval(dist);
+        //let normal = (self.pos - hit_point).unit();
+        let normal = (hit_point - self.pos).unit();
+		let hit_point = hit_point + (normal * 0.001);
+
         Some(
             Hit {
                 hit: self,
                 dist,
-                normal,
+				normal,
+				hit_point
             }
         )
     }
@@ -55,4 +64,39 @@ impl Hitable for Sphere {
     fn color(&self) -> Color {
         self.color
     }
+}
+
+pub struct Plane {
+	pub point: Vec3,
+	pub normal: Vec3,
+    pub color: Color,
+}
+
+impl Hitable for Plane {
+    fn hit(&self, ray: Ray) -> Option<Hit> {
+		let l_dot_n = ray.dir.dot(self.normal);
+
+		if l_dot_n == 0.0 {
+			return None;
+		}
+
+		let dist = ((self.point - ray.pos).dot(self.normal)) / l_dot_n;
+
+		if dist <= 0.0 {
+			return None;
+		}
+
+		Some(
+			Hit {
+				hit: self,
+				dist,
+				normal: self.normal,
+				hit_point: ray.eval(dist),
+			}
+		)
+	}
+
+    fn color(&self) -> Color {
+		self.color
+	}
 }
