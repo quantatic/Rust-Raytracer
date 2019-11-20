@@ -26,7 +26,7 @@ pub fn cast_ray(objects: &[Box<dyn Hitable>], ray: Ray, depth_left: u32) -> Opti
         Some(hit_record) => {
             let bounced_ray = Ray {
                 pos: hit_record.hit_point,
-                dir: ray.dir - (hit_record.normal * 2.0 * ray.dir.dot(hit_record.normal)),
+                dir: ray.dir.bounce_with_normal(hit_record.normal),
             };
 
             match cast_ray(objects, bounced_ray, depth_left - 1) {
