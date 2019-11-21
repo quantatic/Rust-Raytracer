@@ -15,21 +15,24 @@ pub struct Scene {
 
 impl Scene {
     fn hit(&self, ray: Ray) -> Option<Hit> {
-        let mut closest_hit: Option<Hit> = None;
+        let mut maybe_closest_hit_record: Option<Hit> = None;
 
         for obj in self.objects.iter() {
             if let Some(new_hit_record) = obj.hit(ray) {
-                if let Some(old_hit_record) = &closest_hit {
-                    if old_hit_record.dist > new_hit_record.dist {
-                        closest_hit = Some(new_hit_record);
+                match &maybe_closest_hit_record {
+                    Some(closest_hit_record) => {
+                        if closest_hit_record.dist > new_hit_record.dist {
+                            maybe_closest_hit_record = Some(new_hit_record);
+                        }
+                    },
+                    None => {
+                        maybe_closest_hit_record = Some(new_hit_record);
                     }
-                } else {
-                    closest_hit = Some(new_hit_record);
                 }
             }
         }
 
-        closest_hit
+        maybe_closest_hit_record
     }
 
     fn cast_ray(&self, ray: Ray, depth_left: u32) -> Option<Color> {
@@ -37,53 +40,18 @@ impl Scene {
             return None;
         }
 
-        let closest_hit = self.hit(ray);
+        let closest_hit_record = self.hit(ray)?;
 
-        match closest_hit {
-            Some(hit_record) => {
-                let mut lighted = false;
-                for light in self.lights.iter() {
-                    let light_ray_dir = *light - hit_record.hit_point;
-                    //let light_ray_dir = hit_record.hit_point - *light;
-                    let light_ray = Ray {
-                        pos: hit_record.hit_point,
-                        dir: light_ray_dir
-                    };
+        let bounced_ray = Ray {
+            pos: closest_hit_record.hit_point,
+            dir: ray.dir.bounce_with_normal(closest_hit_record.normal),
+        };
 
-                    match self.hit(light_ray) {
-                        Some(light_hit_record) => {
-                            let light_distance = light_ray.dir.len();
-                            if light_distance < light_hit_record.dist {
-                                lighted = true;
-                                break;
-                            }
-                        },
-                        None => {
-                            lighted = true;
-                            break;
-                        }
-                    }
-                }
-
-                if !lighted {
-                    return Some(Color::new(0, 0, 0));
-                }
-
-                let bounced_ray = Ray {
-                    pos: hit_record.hit_point,
-                    dir: ray.dir.bounce_with_normal(hit_record.normal),
-                };
-
-                match self.cast_ray(bounced_ray, depth_left - 1) {
-                    Some(recurse_color) => {
-                        Some(Color::blend(hit_record.hit.color(), 0.8, recurse_color, 0.2))
-                    },
-                    None => {
-                        Some(hit_record.hit.color())
-                    },
-                }
+        match self.cast_ray(bounced_ray, depth_left - 1) {
+            Some(bounced_ray_color) => {
+                Some(Color::blend(closest_hit_record.hit.color(), 0.8, bounced_ray_color))
             },
-            None => None
+            None => Some(closest_hit_record.hit.color()),
         }
     }
 

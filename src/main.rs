@@ -34,7 +34,7 @@ fn main() {
             Box::new(Sphere {
                 pos: Vec3::new(0.0, 0.0, -13.0),
                 radius: 1.0,
-                color: Color::new(255, 0, 0),
+                color: Color::new(0, 255, 0),
             }),
             Box::new(Plane {
                 point: Vec3::new(0.0, -2.0, 0.0),
@@ -47,9 +47,9 @@ fn main() {
         ],
     };
 
-    let dims = (1_000, 1_000);
+    let dims = (2_000, 2_000);
 
-    let pixels = scene.render(dims, 5, 10);
+    let pixels = scene.render(dims, 10, 10);
     write_image("output.png", &pixels, dims)
         .expect("Failed to write to image");
 }

@@ -48,7 +48,6 @@ impl Hitable for Sphere {
 
         let hit_point = ray.eval(dist);
         let normal = (hit_point - self.pos).unit();
-        let hit_point = hit_point + (normal * 0.001);
 
         Some(
             Hit {

@@ -14,14 +14,11 @@ impl Color {
         }
     }
 
-    pub fn blend(c1: Self, part_c1: f64, c2: Self, part_c2: f64) -> Self {
-        // make sure the percentages add up to 100%
-        assert_eq!(part_c1 + part_c2, 1.0);
-
+    pub fn blend(c1: Self, part_c1: f64, c2: Self) -> Self {
         Color {
-            r: ((c1.r as f64) * part_c1 + (c2.r as f64) * part_c2) as u8,
-            g: ((c1.g as f64) * part_c1 + (c2.g as f64) * part_c2) as u8,
-            b: ((c1.b as f64) * part_c1 + (c2.b as f64) * part_c2) as u8,
+            r: ((c1.r as f64) * part_c1 + (c2.r as f64) * (1.0 - part_c1)) as u8,
+            g: ((c1.g as f64) * part_c1 + (c2.g as f64) * (1.0 - part_c1)) as u8,
+            b: ((c1.b as f64) * part_c1 + (c2.b as f64) * (1.0 - part_c1)) as u8,
         }
     }
 }
