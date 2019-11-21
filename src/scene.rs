@@ -10,14 +10,11 @@ use rand::Rng;
 
 pub struct Scene {
     pub objects: Vec<Box<dyn Hitable>>,
+    pub lights: Vec<Vec3>,
 }
 
 impl Scene {
-    fn cast_ray(&self, ray: Ray, depth_left: u32) -> Option<Color> {
-        if depth_left <= 0 {
-            return None;
-        }
-
+    fn hit(&self, ray: Ray) -> Option<Hit> {
         let mut closest_hit: Option<Hit> = None;
 
         for obj in self.objects.iter() {
@@ -32,8 +29,46 @@ impl Scene {
             }
         }
 
+        closest_hit
+    }
+
+    fn cast_ray(&self, ray: Ray, depth_left: u32) -> Option<Color> {
+        if depth_left <= 0 {
+            return None;
+        }
+
+        let closest_hit = self.hit(ray);
+
         match closest_hit {
             Some(hit_record) => {
+                let mut lighted = false;
+                for light in self.lights.iter() {
+                    let light_ray_dir = *light - hit_record.hit_point;
+                    //let light_ray_dir = hit_record.hit_point - *light;
+                    let light_ray = Ray {
+                        pos: hit_record.hit_point,
+                        dir: light_ray_dir
+                    };
+
+                    match self.hit(light_ray) {
+                        Some(light_hit_record) => {
+                            let light_distance = light_ray.dir.len();
+                            if light_distance < light_hit_record.dist {
+                                lighted = true;
+                                break;
+                            }
+                        },
+                        None => {
+                            lighted = true;
+                            break;
+                        }
+                    }
+                }
+
+                if !lighted {
+                    return Some(Color::new(0, 0, 0));
+                }
+
                 let bounced_ray = Ray {
                     pos: hit_record.hit_point,
                     dir: ray.dir.bounce_with_normal(hit_record.normal),

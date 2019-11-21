@@ -27,41 +27,29 @@ fn main() {
     let scene = Scene {
         objects: vec![
             Box::new(Sphere {
-                pos: Vec3::new(0.0, -1.4, -10.0),
-                radius: 1.0,
+                pos: Vec3::new(0.0, 5.0, -20.0),
+                radius: 5.0,
                 color: Color::new(255, 0, 0),
             }),
             Box::new(Sphere {
-                pos: Vec3::new(5.0, -2.0, -20.0),
-                radius: 2.0,
-                color: Color::new(255, 255, 0),
-            }),
-            Box::new(Sphere {
-                pos: Vec3::new(3.0, 3.0, -12.0),
-                radius: 2.0,
-                color: Color::new(127, 255, 127),
-            }),
-            Box::new(Sphere {
-                pos: Vec3::new(-3.0, 0.0, -12.0),
+                pos: Vec3::new(0.0, 0.0, -13.0),
                 radius: 1.0,
-                color: Color::new(255, 0, 255),
+                color: Color::new(255, 0, 0),
             }),
             Box::new(Plane {
                 point: Vec3::new(0.0, -2.0, 0.0),
                 normal: Vec3::new(0.0, 1.0, 0.0),
                 color: Color::new(0, 0, 255),
             }),
-            Box::new(Sphere {
-                pos: Vec3::new(-5.0, 5.0, -20.0),
-                radius: 3.0,
-                color: Color::new(255, 125, 0),
-            }),
+        ],
+        lights: vec![
+            Vec3::new(-10.0, 20.0, -20.0),
         ],
     };
 
-    let dims = (2500, 2500);
+    let dims = (1_000, 1_000);
 
-    let pixels = scene.render(dims, 10, 10);
+    let pixels = scene.render(dims, 5, 10);
     write_image("output.png", &pixels, dims)
         .expect("Failed to write to image");
 }
