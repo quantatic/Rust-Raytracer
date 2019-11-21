@@ -5,7 +5,7 @@ use crate::hit::Hit;
 
 pub trait Hitable {
     fn hit(&self, ray: Ray) -> Option<Hit>;
-    fn color(&self) -> Color;
+    fn color(&self, pos: Vec3) -> Color;
 }
 
 pub struct Sphere {
@@ -59,7 +59,7 @@ impl Hitable for Sphere {
         )
     }
 
-    fn color(&self) -> Color {
+    fn color(&self, _pos: Vec3) -> Color {
         self.color
     }
 }
@@ -68,6 +68,7 @@ pub struct Plane {
     pub point: Vec3,
     pub normal: Vec3,
     pub color: Color,
+    pub tile_scale: f64,
 }
 
 impl Hitable for Plane {
@@ -94,7 +95,24 @@ impl Hitable for Plane {
         )
     }
 
-    fn color(&self) -> Color {
-        self.color
+    fn color(&self, pos: Vec3) -> Color {
+        let color_bool = (rem_euclid(pos.x / self.tile_scale, 1.0) < 0.5)
+            ^ (rem_euclid(pos.y / self.tile_scale, 1.0) < 0.5)
+            ^ (rem_euclid(pos.z / self.tile_scale, 1.0) < 0.5);
+
+        if color_bool {
+            self.color
+        } else {
+            Color::new(255, 255, 255)
+        }
+    }
+}
+
+fn rem_euclid(a: f64, b: f64) -> f64 {
+    let r = a % b;
+    if r < 0.0 {
+        r + b.abs()
+    } else {
+        r
     }
 }

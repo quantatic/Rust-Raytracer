@@ -40,6 +40,7 @@ fn main() {
                 point: Vec3::new(0.0, -2.0, 0.0),
                 normal: Vec3::new(0.0, 1.0, 0.0),
                 color: Color::new(0, 0, 255),
+                tile_scale: 2.5,
             }),
         ],
         lights: vec![
@@ -47,7 +48,7 @@ fn main() {
         ],
     };
 
-    let dims = (2_000, 2_000);
+    let dims = (1_000, 1_000);
 
     let pixels = scene.render(dims, 10, 10);
     write_image("output.png", &pixels, dims)

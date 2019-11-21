@@ -47,11 +47,13 @@ impl Scene {
             dir: ray.dir.bounce_with_normal(closest_hit_record.normal),
         };
 
+        let closest_hit_obj_color = closest_hit_record.hit.color(closest_hit_record.hit_point);
+
         match self.cast_ray(bounced_ray, depth_left - 1) {
             Some(bounced_ray_color) => {
-                Some(Color::blend(closest_hit_record.hit.color(), 0.8, bounced_ray_color))
+                Some(Color::blend(closest_hit_obj_color, 0.8, bounced_ray_color))
             },
-            None => Some(closest_hit_record.hit.color()),
+            None => Some(closest_hit_obj_color),
         }
     }
 
