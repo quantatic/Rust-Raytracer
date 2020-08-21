@@ -1,6 +1,7 @@
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 
 use num::Float;
+use num::FromPrimitive;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Vec3<T> {
@@ -15,7 +16,7 @@ impl<T> Vec3<T> {
     }
 }
 
-impl<T: Float> Vec3<T> {
+impl<T: Float + FromPrimitive> Vec3<T> {
     pub fn size(&self) -> T {
         ((self.x * self.x) + (self.y * self.y) + (self.z * self.z)).sqrt()
     }
@@ -34,6 +35,10 @@ impl<T: Float> Vec3<T> {
 
     pub fn unit(&self) -> Self {
         *self / self.size()
+    }
+
+    pub fn reflect_using_normal(&self, normal: Self) -> Self {
+        *self - (normal.unit() * self.dot(normal.unit()) * T::from_f64(2.0).unwrap())
     }
 }
 

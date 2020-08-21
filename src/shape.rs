@@ -25,15 +25,26 @@ impl Shape for Sphere {
             ray.dir.unit().dot(o_sub_c).powi(2) - (o_sub_c.size().powi(2) - self.radius.powi(2));
 
         if disc >= 0.0 {
-            let hit_dist = -ray.dir.unit().dot(o_sub_c) - disc.sqrt();
-            let hit_loc = ray.eval(hit_dist / ray.dir.size());
-            let hit_normal = (hit_loc - self.center).unit();
-            let hit_record = HitRecord {
-                location: hit_loc,
-                normal: hit_normal,
-                distance: hit_dist,
+            let hit_dist_1 = -ray.dir.unit().dot(o_sub_c) + disc.sqrt();
+            let hit_dist_2 = -ray.dir.unit().dot(o_sub_c) - disc.sqrt();
+
+            let closest_hit_dist = if hit_dist_1 < hit_dist_2 && hit_dist_1 >= 0.0 {
+                Some(hit_dist_1)
+            } else if hit_dist_2 >= 0.0 {
+                Some(hit_dist_2)
+            } else {
+                None
             };
-            Some(hit_record)
+
+            closest_hit_dist.map(|hit_dist| {
+                let hit_loc = ray.eval(hit_dist / ray.dir.size());
+                let hit_normal = (hit_loc - self.center).unit();
+                HitRecord {
+                    location: hit_loc,
+                    normal: hit_normal,
+                    distance: hit_dist,
+                }
+            })
         } else {
             None
         }
