@@ -1,5 +1,7 @@
+mod ray;
+mod shape;
 mod vec3;
 
-use vec3::Vec3;
-
-fn do_something() {}
+pub use ray::Ray;
+pub use shape::{Shape, Sphere};
+pub use vec3::Vec3;
