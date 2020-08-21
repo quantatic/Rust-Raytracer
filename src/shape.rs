@@ -1,10 +1,6 @@
+use crate::HitRecord;
 use crate::Ray;
 use crate::Vec3;
-
-pub struct HitRecord {
-    pub hit_loc: Vec3<f64>,
-    pub hit_normal: Vec3<f64>,
-}
 
 pub trait Shape {
     fn intersects(&self, ray: Ray<f64>) -> Option<HitRecord>;
@@ -29,12 +25,13 @@ impl Shape for Sphere {
             ray.dir.unit().dot(o_sub_c).powi(2) - (o_sub_c.size().powi(2) - self.radius.powi(2));
 
         if disc >= 0.0 {
-            let hit_dist = -ray.dir.unit().dot(o_sub_c) + disc.sqrt();
+            let hit_dist = -ray.dir.unit().dot(o_sub_c) - disc.sqrt();
             let hit_loc = ray.eval(hit_dist / ray.dir.size());
             let hit_normal = (hit_loc - self.center).unit();
             let hit_record = HitRecord {
-                hit_loc,
-                hit_normal,
+                location: hit_loc,
+                normal: hit_normal,
+                distance: hit_dist,
             };
             Some(hit_record)
         } else {

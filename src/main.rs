@@ -8,7 +8,7 @@ use image::{ImageBuffer, Rgb};
 
 use rayon::prelude::*;
 
-const WIDTH: u32 = 100_000;
+const WIDTH: u32 = 25_000;
 const ASPECT_RATIO: f64 = 1.0; // ratio of WIDTH / HEIGHT
 
 const HEIGHT: u32 = ((WIDTH as f64) * ASPECT_RATIO) as u32;
@@ -18,10 +18,9 @@ const SCALE_FACTOR: f64 = 2.0 / (WIDTH as f64);
 fn main() -> Result<(), Box<dyn Error>> {
     let mut shapes: Vec<Box<dyn Shape + Sync>> = Vec::new();
 
-    shapes.push(Box::new(Sphere::new(Vec3::new(0.0, 0.0, -6.0), 2.0)));
-    shapes.push(Box::new(Sphere::new(Vec3::new(0.0, 0.0, -6.0), 2.0)));
-    shapes.push(Box::new(Sphere::new(Vec3::new(0.0, 0.0, -6.0), 2.0)));
-    shapes.push(Box::new(Sphere::new(Vec3::new(0.0, 0.0, -6.0), 2.0)));
+    shapes.push(Box::new(Sphere::new(Vec3::new(0.0, 0.0, -2.0), 1.0)));
+    shapes.push(Box::new(Sphere::new(Vec3::new(1.0, 0.0, -2.0), 1.0)));
+    shapes.push(Box::new(Sphere::new(Vec3::new(0.5, 0.5, -2.0), 1.0)));
 
     let mut image_buffer: ImageBuffer<Rgb<u8>, _> = ImageBuffer::new(WIDTH, HEIGHT);
 
@@ -39,17 +38,16 @@ fn main() -> Result<(), Box<dyn Error>> {
                 if let Some(closest_hit) = shapes
                     .iter()
                     .filter_map(|shape| shape.intersects(projected_ray))
-                    .max_by(|hit_1, hit_2| {
-                        let dist_to_hit_1 = (projected_ray.origin - hit_1.hit_loc).size();
-                        let dist_to_hit_2 = (projected_ray.origin - hit_2.hit_loc).size();
-                        dist_to_hit_1
-                            .partial_cmp(&dist_to_hit_2)
+                    .min_by(|hit_1, hit_2| {
+                        hit_1
+                            .distance
+                            .partial_cmp(&hit_2.distance)
                             .expect("Distances shouldn't be NaN")
                     })
                 {
-                    let normal_color_x = ((closest_hit.hit_normal.x / 2.0 + 0.5) * 255.0) as u8;
-                    let normal_color_y = ((closest_hit.hit_normal.y / 2.0 + 0.5) * 255.0) as u8;
-                    let normal_color_z = ((closest_hit.hit_normal.z / 2.0 + 0.5) * 255.0) as u8;
+                    let normal_color_x = ((closest_hit.normal.x / 2.0 + 0.5) * 255.0) as u8;
+                    let normal_color_y = ((closest_hit.normal.y / 2.0 + 0.5) * 255.0) as u8;
+                    let normal_color_z = ((closest_hit.normal.z / 2.0 + 0.5) * 255.0) as u8;
                     *pixel = Rgb([normal_color_x, normal_color_y, normal_color_z]);
                 } else {
                     *pixel = Rgb([0; 3])
