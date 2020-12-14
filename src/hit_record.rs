@@ -1,7 +1,7 @@
-use crate::Vec3;
+use nalgebra::{Point3, Vector3};
 
 pub struct HitRecord {
-    pub location: Vec3<f64>,
-    pub normal: Vec3<f64>,
-    pub distance: f64,
+    pub position: Point3<f64>,
+    pub time: f64,
+    pub normal: Vector3<f64>,
 }
