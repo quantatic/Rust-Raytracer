@@ -12,12 +12,21 @@ impl Scene {
     }
 
     pub fn get_closest_hit(&self, ray: Ray) -> Option<HitRecord> {
+        let mut closest_record: Option<HitRecord> = None;
         for object in &self.objects {
             if let Some(record) = object.intersect(ray) {
-                return Some(record);
+                closest_record = closest_record
+                    .map_or(record, |cur_closest| {
+                        if record.time < cur_closest.time {
+                            record
+                        } else {
+                            cur_closest
+                        }
+                    })
+                    .into();
             }
         }
 
-        None
+        closest_record
     }
 }

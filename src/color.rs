@@ -20,6 +20,14 @@ impl Color {
             b: ((value & 0xFF) as f64) / 255.0,
         }
     }
+
+    pub fn new(r: f64, g: f64, b: f64) -> Self {
+        Self {
+            r: r.max(0.0).min(1.0),
+            g: g.max(0.0).min(1.0),
+            b: b.max(0.0).min(1.0),
+        }
+    }
 }
 
 impl Div<f64> for Color {

@@ -42,8 +42,9 @@ impl Renderer {
         let _color = Color::default();
 
         // map input (x, y) to [-1, 1]
+        // y needs to be reversed
         let xn = (((2 * x) as f64) - (self.width as f64)) / dim;
-        let yn = (((2 * y) as f64) - (self.height as f64)) / dim;
+        let yn = ((self.height as f64) - ((2 * y) as f64)) / dim;
 
         let mut rng = thread_rng();
 
@@ -53,8 +54,8 @@ impl Renderer {
     }
 
     fn trace_ray(&self, ray: Ray) -> Color {
-        if self.scene.get_closest_hit(ray).is_some() {
-            Color::hex(0xFFFFFF)
+        if let Some(record) = self.scene.get_closest_hit(ray) {
+            Color::new(record.normal.x, record.normal.y, record.normal.z)
         } else {
             Color::hex(0x000000)
         }

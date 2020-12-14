@@ -2,7 +2,7 @@ use crate::{HitRecord, Ray};
 
 use super::Shape;
 
-use nalgebra::{Point3, Vector3};
+use nalgebra::Point3;
 
 #[derive(Default)]
 pub struct Sphere;
@@ -21,29 +21,31 @@ impl Shape for Sphere {
             return None;
         }
 
+        let root_disc = disc.sqrt();
+
         let q = if b < 0.0 {
-            -0.5 * (b - (b.powi(2) - (4.0 * a * c)))
+            -0.5 * (b - root_disc)
         } else {
-            -0.5 * (b + (b.powi(2) - (4.0 * a * c)))
+            -0.5 * (b + root_disc)
         };
 
         let sol1 = q / a;
         let sol2 = c / q;
 
-        if sol1 > 0.0 && sol1 < sol2 {
-            Some(HitRecord {
-                position: ray.eval(sol1),
-                time: sol1,
-                normal: Vector3::new(0.0, 0.0, 0.0),
-            })
+        let solution = if sol1 > 0.0 && sol1 < sol2 {
+            sol1
         } else if sol2 > 0.0 {
-            Some(HitRecord {
-                position: ray.eval(sol2),
-                time: sol2,
-                normal: Vector3::new(0.0, 0.0, 0.0),
-            })
+            sol2
         } else {
-            None
-        }
+            return None;
+        };
+
+        // sphere has radius of 1, so normal is normalized already
+        let normal = ray.eval(solution) - Point3::origin();
+
+        Some(HitRecord {
+            time: solution,
+            normal,
+        })
     }
 }
