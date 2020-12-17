@@ -1,10 +1,12 @@
 use crate::{Color, Ray};
 
-use nalgebra::Point3;
+use nalgebra::{Point3, Unit};
 
+#[derive(Debug)]
 pub struct IlluminationRecord {
     pub color: Color,
     pub to_light: Ray,
+    pub time: f64,
 }
 
 pub trait Light {
@@ -26,12 +28,13 @@ impl Light for PointLight {
     fn illuminate(&self, point: Point3<f64>) -> IlluminationRecord {
         let to_light = Ray {
             origin: point,
-            direction: point - self.location,
+            direction: Unit::new_normalize(self.location - point),
         };
 
         IlluminationRecord {
             color: self.color,
             to_light,
+            time: (self.location - point).norm(),
         }
     }
 }

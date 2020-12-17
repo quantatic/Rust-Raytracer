@@ -1,59 +1,61 @@
 use crate::Ray;
 
-use nalgebra::{Point3, Vector3};
+use nalgebra::{Isometry3, Perspective3, Point3, Projective3, Unit, Vector3};
+
+const Z_NEAR: f64 = 100.0;
+const Z_FAR: f64 = 1e5;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Camera {
-    // location of camera
-    location: Point3<f64>,
-
-    // look direction of camera
-    direction: Vector3<f64>,
-
-    // up vector for camera
-    up: Vector3<f64>,
-
-    // fov in radians
-    fov: f64,
+    ndc_to_camera: Projective3<f64>,
+    camera_to_world: Isometry3<f64>,
 }
 
 impl Default for Camera {
     fn default() -> Self {
-        Self {
-            location: Point3::new(0.0, 0.0, 0.0),
-            direction: Vector3::new(0.0, 0.0, -1.0),
-            up: Vector3::new(0.0, 1.0, 0.0),
-            fov: std::f64::consts::FRAC_PI_2,
-        }
+        Self::new(
+            Point3::new(0.0, 0.0, 0.0),
+            Point3::new(0.0, 0.0, -1.0),
+            Vector3::y_axis(),
+            std::f64::consts::FRAC_PI_2,
+            1.0,
+        )
     }
 }
 
 impl Camera {
-    pub fn look_at(
-        location: Point3<f64>,
-        direction: Vector3<f64>,
-        up: Vector3<f64>,
-        fov: f64,
+    pub fn new(
+        camera_location: Point3<f64>,
+        look_location: Point3<f64>,
+        up: Unit<Vector3<f64>>,
+        fov_y: f64,
+        aspect_ratio: f64,
     ) -> Self {
+        let ndc_to_camera = Perspective3::new(aspect_ratio, fov_y, Z_NEAR, Z_FAR)
+            .to_projective()
+            .inverse();
+
+        let camera_to_world =
+            Isometry3::look_at_rh(&camera_location, &look_location, &up).inverse();
+
         Self {
-            location,
-            direction,
-            up,
-            fov,
+            ndc_to_camera,
+            camera_to_world,
         }
     }
 
     // sample rays from this camera
-    // both x and y are from the range [-1, 1]
+    // input x and y are in NDC space
     pub fn cast_ray(&self, x: f64, y: f64) -> Ray {
-        let right = self.direction.cross(&self.up).normalize();
+        let ndc_film_location = Point3::new(x, y, -1.0);
 
-        // look direction, adjusted to viewing plane by FOV
-        let fov_dir = self.direction * (self.fov / 2.0).tan().recip();
+        let camera_film_location = self.ndc_to_camera.transform_point(&ndc_film_location);
 
-        Ray {
-            origin: self.location,
-            direction: fov_dir + (right * x) + (self.up * y),
-        }
+        let camera_ray = Ray {
+            origin: Point3::origin(),
+            direction: Unit::new_normalize(camera_film_location - Point3::origin()),
+        };
+
+        camera_ray.transform(self.camera_to_world)
     }
 }

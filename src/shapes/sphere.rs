@@ -2,13 +2,13 @@ use crate::{HitRecord, Ray};
 
 use super::Shape;
 
-use nalgebra::Point3;
+use nalgebra::{Point3, Unit};
 
 #[derive(Default)]
 pub struct Sphere;
 
 impl Shape for Sphere {
-    fn intersect(&self, ray: Ray) -> Option<HitRecord> {
+    fn intersect(&self, ray: Ray, epsilon: f64) -> Option<HitRecord> {
         let o_minus_c = ray.origin - Point3::origin(); // center is implicitly at 0, 0, 0
 
         let a = ray.direction.norm().powi(2);
@@ -29,19 +29,21 @@ impl Shape for Sphere {
             -0.5 * (b + root_disc)
         };
 
-        let sol1 = q / a;
-        let sol2 = c / q;
+        let sol_1 = q / a;
+        let sol_2 = c / q;
 
-        let solution = if sol1 > 0.0 && sol1 < sol2 {
-            sol1
-        } else if sol2 > 0.0 {
-            sol2
+        let sol_min = f64::min(sol_1, sol_2);
+        let sol_max = f64::max(sol_1, sol_2);
+
+        let solution = if sol_min > epsilon {
+            sol_min
+        } else if sol_max > epsilon {
+            sol_max
         } else {
             return None;
         };
 
-        // sphere has radius of 1, so normal is normalized already
-        let normal = ray.eval(solution) - Point3::origin();
+        let normal = Unit::new_normalize(ray.eval(solution) - Point3::origin());
 
         Some(HitRecord {
             time: solution,

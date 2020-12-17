@@ -3,6 +3,8 @@ use crate::{Buffer, Camera, Color, Ray, Scene};
 use image::RgbImage;
 use rand::{thread_rng, Rng};
 
+const EPSILON: f64 = 1e-8;
+
 pub struct Renderer {
     scene: Scene,
     camera: Camera,
@@ -42,20 +44,37 @@ impl Renderer {
         let _color = Color::default();
 
         // map input (x, y) to [-1, 1]
-        // y needs to be reversed
         let xn = (((2 * x) as f64) - (self.width as f64)) / dim;
         let yn = ((self.height as f64) - ((2 * y) as f64)) / dim;
 
         let mut rng = thread_rng();
 
-        let dx = rng.gen_range(-1.0 / dim, 1.0 / dim);
-        let dy = rng.gen_range(-1.0 / dim, 1.0 / dim);
+        let dx = rng.gen_range(0.0, 1.0 / dim);
+        let dy = rng.gen_range(0.0, 1.0 / dim);
         self.trace_ray(self.camera.cast_ray(xn + dx, yn + dy))
     }
 
     fn trace_ray(&self, ray: Ray) -> Color {
-        if let Some(record) = self.scene.get_closest_hit(ray) {
-            Color::new(record.normal.x, record.normal.y, record.normal.z)
+        if let Some(hit_record) = self.scene.get_closest_hit(ray, EPSILON) {
+            let mut hit_color = Color::new(
+                hit_record.normal.x,
+                hit_record.normal.y,
+                hit_record.normal.z,
+            );
+
+            for illumination in self.scene.illuminations(ray.eval(hit_record.time)) {
+                // if shadow ray has less travel time than illumination ray, we're in shadow
+                let shadow = self
+                    .scene
+                    .get_closest_hit(illumination.to_light, EPSILON)
+                    .map_or(false, |shadow_hit| shadow_hit.time < illumination.time);
+
+                if shadow {
+                    hit_color = Color::hex(0x000000);
+                }
+            }
+
+            hit_color
         } else {
             Color::hex(0x000000)
         }

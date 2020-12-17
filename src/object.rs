@@ -17,10 +17,10 @@ impl Object {
         }
     }
 
-    pub fn intersect(&self, ray: Ray) -> Option<HitRecord> {
-        // ray has to be scaled by inverse of transform, to convert from world to local coordinates
+    pub fn intersect(&self, ray: Ray, epsilon: f64) -> Option<HitRecord> {
+        // ray has to be scaled by inverse of transform, to convert from world to local space
         self.shape
-            .intersect(self.transform.inverse().set_category() * ray)
+            .intersect(ray.transform(self.transform.inverse()), epsilon)
     }
 
     pub fn translate(self, x: f64, y: f64, z: f64) -> Self {
