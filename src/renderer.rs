@@ -2,19 +2,26 @@ use crate::{Buffer, Camera, Color, Ray, Scene};
 
 use image::RgbImage;
 use rand::{thread_rng, Rng};
+use rayon::prelude::*;
 
 const EPSILON: f64 = 1e-8;
 
 pub struct Renderer {
     scene: Scene,
     camera: Camera,
-    width: u32,
-    height: u32,
-    iterations: u32,
+    width: usize,
+    height: usize,
+    iterations: usize,
 }
 
 impl Renderer {
-    pub fn new(scene: Scene, camera: Camera, width: u32, height: u32, iterations: u32) -> Self {
+    pub fn new(
+        scene: Scene,
+        camera: Camera,
+        width: usize,
+        height: usize,
+        iterations: usize,
+    ) -> Self {
         Self {
             scene,
             camera,
@@ -26,20 +33,37 @@ impl Renderer {
 
     pub fn render(&self) -> RgbImage {
         let mut b = Buffer::new(self.width, self.height);
-        for y in 0..self.height {
-            for x in 0..self.width {
+        b.enumerate_pixels()
+            .par_bridge()
+            .for_each(|(x, y, mut pixel)| {
                 for _ in 0..self.iterations {
-                    b.add_sample(x, y, self.sample_pixel(x, y));
+                    pixel.add_sample(self.sample_pixel(x, y))
+                }
+            });
+        /*
+        for y in 0..self.height {
+            let row_samples = (0..self.width)
+                .into_par_iter()
+                .map(move |x| {
+                    (0..self.iterations)
+                        .map(move |_| self.sample_pixel(x, y))
+                        .collect::<Vec<_>>()
+                })
+                .collect::<Vec<_>>();
+
+            for (x, pixel_samples) in row_samples.into_iter().enumerate() {
+                for sample in pixel_samples {
+                    b.add_sample(x as usize, y, sample);
                 }
             }
-        }
+        }*/
 
         b.into()
     }
 
     // x and y represent rendered (x, y) of pixel in final image
-    fn sample_pixel(&self, x: u32, y: u32) -> Color {
-        let dim = u32::max(self.width, self.height) as f64;
+    fn sample_pixel(&self, x: usize, y: usize) -> Color {
+        let dim = usize::max(self.width, self.height) as f64;
 
         let _color = Color::default();
 

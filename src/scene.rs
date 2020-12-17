@@ -4,7 +4,7 @@ use nalgebra::Point3;
 
 #[derive(Default)]
 pub struct Scene {
-    lights: Vec<Box<dyn Light>>,
+    lights: Vec<Box<dyn Light + Send + Sync>>,
     objects: Vec<Object>,
 }
 
@@ -13,7 +13,7 @@ impl Scene {
         self.objects.push(object)
     }
 
-    pub fn add_light<T: Light + 'static>(&mut self, light: T) {
+    pub fn add_light<T: Light + 'static + Send + Sync>(&mut self, light: T) {
         self.lights.push(Box::new(light))
     }
 
@@ -34,24 +34,23 @@ impl Scene {
         closest_record
     }
 
-    pub fn illuminations<'a>(
-        &self,
-        point: Point3<f64>,
-    ) -> impl Iterator<Item = IlluminationRecord> + '_ {
-        self.lights.iter().map(move |light| light.illuminate(point))
+    pub fn illuminations(&self, point: Point3<f64>) -> Illuminations<'_> {
+        Illuminations {
+            lights: Box::new(self.lights.iter().map(Box::as_ref)),
+            point,
+        }
     }
 }
 
-/*
 pub struct Illuminations<'a> {
-    lights: std::slice::Iter<'a, Box<dyn Light>>,
+    lights: Box<dyn Iterator<Item = &'a (dyn Light + Send + Sync)> + 'a>,
+    point: Point3<f64>,
 }
 
 impl Iterator for Illuminations<'_> {
     type Item = IlluminationRecord;
 
     fn next(&mut self) -> Option<<Self as Iterator>::Item> {
-        self.lights.next().map(
+        self.lights.next().map(|light| light.illuminate(self.point))
     }
 }
-*/

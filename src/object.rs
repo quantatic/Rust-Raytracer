@@ -3,13 +3,13 @@ use crate::{HitRecord, Material, Ray, Shape};
 use nalgebra::{Projective3, Rotation, Translation3, Unit, Vector3};
 
 pub struct Object {
-    shape: Box<dyn Shape>,
+    shape: Box<dyn Shape + Sync>,
     material: Material,
     transform: Projective3<f64>,
 }
 
 impl Object {
-    pub fn new<T: Shape + 'static>(shape: T, material: Material) -> Self {
+    pub fn new<T: Shape + 'static + Sync>(shape: T, material: Material) -> Self {
         Self {
             shape: Box::new(shape),
             material,
