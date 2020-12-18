@@ -8,8 +8,8 @@ pub struct Buffer {
     width: usize,
     height: usize,
 
-    // laid out as: samples[y][x][sample_num] or samples[row][col][sample_num]
-    samples: Vec<Vec<Vec<Color>>>,
+    // laid out as: samples[(y * width) + x][sample_num] or samples[(row * width) + col][sample_num]
+    samples: Vec<Vec<Color>>,
 }
 
 impl Buffer {
@@ -17,19 +17,13 @@ impl Buffer {
         Self {
             width,
             height,
-            samples: vec![vec![vec![]; width]; height],
+            samples: vec![vec![]; width * height],
         }
     }
 
-    pub fn add_sample(&mut self, x: usize, y: usize, sample: Color) {
-        self.samples[y][x].push(sample);
-    }
-
     pub fn enumerate_pixels(&mut self) -> EnumeratePixels {
-        let pixels = self.samples.iter_mut().flat_map(move |row| {
-            row.iter_mut().map(move |pixel_samples| Pixel {
-                samples: pixel_samples,
-            })
+        let pixels = self.samples.iter_mut().map(move |pixel_samples| Pixel {
+            samples: pixel_samples,
         });
 
         EnumeratePixels {
@@ -44,7 +38,7 @@ impl Buffer {
         let mut color = Color::default();
         let mut num_samples = 0.0;
         //for sample in &self.samples[((y * self.width) as usize) + (x as usize)] {
-        for sample in &self.samples[y][x] {
+        for sample in &self.samples[(y * self.width) + x] {
             color += *sample;
             num_samples += 1.0;
         }
