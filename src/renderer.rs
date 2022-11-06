@@ -73,8 +73,8 @@ impl Renderer {
 
         let mut rng = thread_rng();
 
-        let dx = rng.gen_range(0.0, 1.0 / dim);
-        let dy = rng.gen_range(0.0, 1.0 / dim);
+        let dx = rng.gen_range(0.0..(1.0 / dim));
+        let dy = rng.gen_range(0.0..(1.0 / dim));
         self.trace_ray(self.camera.cast_ray(xn + dx, yn + dy))
     }
 
