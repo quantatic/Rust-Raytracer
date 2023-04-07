@@ -1,7 +1,6 @@
 mod material;
 mod ray;
 mod shape;
-mod vec3;
 
 use anyhow::Result;
 use eframe::egui;
@@ -15,18 +14,13 @@ use nalgebra::{UnitVector3, Vector3};
 use rand::Rng;
 use ray::Ray;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
-use shape::{Mesh, ShapeCollisionInformation};
-use shape::{Shape, Sphere};
+use shape::ShapeCollisionInformation;
+use shape::{Plane, Shape, Sphere};
 
 const RENDER_WIDTH: usize = 250;
 const RENDER_HEIGHT: usize = 250;
 
 fn main() {
-    let vec = Vector3::new(1.0, 2.0, 3.0);
-    let vec_norm = vec.normalize();
-    println!("{:?}", vec);
-    println!("{:?}", vec_norm);
-
     let native_options = eframe::NativeOptions::default();
     eframe::run_native(
         "My egui App",
@@ -46,40 +40,30 @@ struct MyEguiApp {
     image: TextureHandle,
 }
 
-const SANDAL_PLY: &str = include_str!("../meshes/sandal.ply");
-const SCISSORS_PLY: &str = include_str!("../meshes/scissors.ply");
-
 impl MyEguiApp {
     fn new(ctx: &Context) -> Result<Self> {
         let shapes: Vec<Box<dyn Shape + Sync>> = vec![
-            // Box::new(Sphere {
-            //     center: Vector3::new(-2.0, 0.0, -4.0),
-            //     radius: 1.0,
-            //     material: DiffuseMaterial {
-            //         albedo: Vector3::new(1.0, 0.2, 0.2),
-            //     },
-            // }),
-            // Box::new(Sphere {
-            //     center: Vector3::new(2.0, 0.0, -4.0),
-            //     radius: 1.0,
-            //     material: DiffuseMaterial {
-            //         albedo: Vector3::new(0.2, 1.0, 0.2),
-            //     },
-            // }),
+            Box::new(Plane {
+                point: Vector3::new(0.0, -3.0, 0.0),
+                normal: UnitVector3::new_normalize(Vector3::new(0.0, 1.0, 0.0)),
+                material: DiffuseMaterial {
+                    albedo: Vector3::new(1.0, 1.0, 1.0),
+                },
+            }),
             Box::new(Sphere {
-                center: Vector3::new(0.0, 2.0, -4.0),
+                center: Vector3::new(1.0, 2.0, -4.0),
+                radius: 1.0,
+                material: DiffuseMaterial {
+                    albedo: Vector3::new(0.1, 1.0, 0.1),
+                },
+            }),
+            Box::new(Sphere {
+                center: Vector3::new(-1.0, 2.0, -4.0),
                 radius: 1.0,
                 material: LightMaterial {
                     color: Vector3::new(0.9, 0.9, 0.9),
                 },
             }),
-            Box::new(Mesh::from_ply(
-                DiffuseMaterial {
-                    albedo: Vector3::new(0.8, 0.5, 0.2),
-                },
-                Vector3::new(0.0, 0.0, -100.0),
-                SCISSORS_PLY,
-            )?),
         ];
 
         let mut result = Self {

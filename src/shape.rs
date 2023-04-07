@@ -1,4 +1,4 @@
-mod mesh;
+mod plane;
 mod sphere;
 
 use egui::{Slider, Ui};
@@ -6,7 +6,7 @@ use egui::{Slider, Ui};
 use crate::{Material, Ray};
 use nalgebra::{UnitVector3, Vector3};
 
-pub use mesh::Mesh;
+pub use plane::Plane;
 pub use sphere::Sphere;
 
 #[derive(Clone, Copy, Debug)]
